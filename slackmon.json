@@ -1,0 +1,28 @@
+{
+    "general":{
+    },
+    "database":{
+        "drivername":"postgres",
+        "host":"localhost",
+        "database":"slackmon",
+        "port":"5432",
+        "username":"slackmon",
+        "password":""
+    },
+    "checks":{
+        "timeout":"2",
+        "frequency":"1",
+        "unit":"minutes",
+        "urls":[
+            "https://www.google.com/",
+            "https://www.facebook.com/",
+            "https://www.yahoo.com/",
+            "https://twitter.com/"
+            ]
+    },
+    "slack":{
+        "username":"slackmon",
+        "incoming_webhook":"https://foo.slack.com/services/hooks/incoming-webhook?token=f00"
+    }
+
+}
