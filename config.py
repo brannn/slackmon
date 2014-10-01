@@ -7,7 +7,7 @@ Copyright (c) 2014 Brandon Huey <brandon@polytap.com>
 
 import json
 
-CONFIG = json.load(open('../slackmon.json'))
+CONFIG = json.load(open('slackmon.json'))
 
 # Database parameters
 DATABASE = {'drivername': CONFIG["database"]["drivername"],
