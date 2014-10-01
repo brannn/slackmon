@@ -28,6 +28,11 @@ def job():
 
 schedule.every(config.FREQUENCY).minutes.do(job)
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+try:
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+except KeyboardInterrupt:
+     print "\nQuitting..."
+     sys.exit(2)
+
