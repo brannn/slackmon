@@ -16,7 +16,6 @@ import config
 DeclarativeBase = declarative_base()
 
 def now():
-    print "Using now func"
     return datetime.datetime.now()
 
 def db_connect():
