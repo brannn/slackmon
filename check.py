@@ -16,6 +16,7 @@ import notify
 
 from sqlalchemy.orm import sessionmaker
 
+
 class CheckSites(object):
 
     def __init__(self):
@@ -24,8 +25,9 @@ class CheckSites(object):
         self.Session = sessionmaker(bind=engine)
 
     def exception_handler(self, request, exception):
-        payload = {"username": "Slackmon", "text": "Timeout loading " + request.url}
-        #notify.slack_error(exception)
+        payload = {"username": "Slackmon", "text": "Timeout loading "
+                   + request.url}
+        # notify.slack_error(exception)
 
     def process_response(self, response, **kwargs):
         is_muted = 'FALSE'
@@ -47,9 +49,9 @@ class CheckSites(object):
 
     def run_checks(self):
         reqs = (grequests.get(url,
-               timeout=config.TIMEOUT,
-               hooks={'response' : self.process_response})
-               for url in config.URLS)
+                timeout=config.TIMEOUT,
+                hooks={'response': self.process_response})
+                for url in config.URLS)
         grequests.map(reqs, exception_handler=self.exception_handler)
 
     def active_url(self, response, **kwargs):
@@ -64,21 +66,21 @@ class CheckSites(object):
         session.commit()
         session.close()
         sys.stdout.write("%s: Adding untracked URL %s for monitoring\n"
-            % (datetime.datetime.now(), response.url))
+                         % (datetime.datetime.now(), response.url))
 
     def update_url(self, response, **kwargs):
         session = self.Session()
         session.query(Check).filter_by(url=response.url).update(
             {Check.last_status: response.status_code,
-            Check.elapsed_time: response.elapsed.total_seconds(),
-            Check.last_request: datetime.datetime.now()})
+             Check.elapsed_time: response.elapsed.total_seconds(),
+             Check.last_request: datetime.datetime.now()})
         session.commit()
         session.close()
         sys.stdout.write("%s: Updated %s %s %s\n" %
-            (datetime.datetime.now(),
-            response.url,
-            response.status_code,
-            response.elapsed.total_seconds()))
+                         (datetime.datetime.now(),
+                          response.url,
+                          response.status_code,
+                          response.elapsed.total_seconds()))
 
 if __name__ == '__main__':
     job = CheckSites()
