@@ -33,10 +33,10 @@ class CheckSites(object):
         check_data = Check(url=response.url, last_status=response.status_code,
                            elapsed_time=response.elapsed.total_seconds(),
                            content_type=response.headers["Content-type"],
+                           last_request=datetime.datetime.now(),
                            is_up=is_up, is_muted=is_muted)
         if not self.active_url(response):
-            self.add_url(check_data)
-            print "Not found"
+            self.add_url(response, check_data)
         else:
             self.update_url(response)
         if response.status_code != 200:
@@ -58,12 +58,13 @@ class CheckSites(object):
         session.close()
         return result
 
-    def add_url(self, check_data, **kwargs):
-        sys.stdout.write("Adding untracked URL %s" % url)
+    def add_url(self, response, check_data, **kwargs):
         session = self.Session()
         session.add(check_data)
         session.commit()
         session.close()
+        sys.stdout.write("%s: Adding untracked URL %s for monitoring\n"
+            % (datetime.datetime.now(), response.url))
 
     def update_url(self, response, **kwargs):
         session = self.Session()
