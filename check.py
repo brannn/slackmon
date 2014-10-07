@@ -8,9 +8,9 @@ import grequests
 import requests
 import json
 import datetime
+import sys
 
 import config
-import db
 from models import Check, db_connect, create_checks_table
 import notify
 
@@ -25,32 +25,24 @@ class CheckSites(object):
 
     def exception_handler(self, request, exception):
         payload = {"username": "Slackmon", "text": "Timeout loading " + request.url}
-        notify.slack_error(exception)
+        #notify.slack_error(exception)
 
     def process_response(self, response, **kwargs):
-        session = self.Session()
         is_muted = 'FALSE'
         is_up = 'TRUE' if response.status_code == 200 else 'FALSE'
-
-        new_response = Check(url=response.url, last_status=response.status_code,
-                             content_type=response.headers["Content-type"],
-                             is_up=is_up, is_muted=is_muted)
-
-        if not session.query(Check).filter_by(url=response.url).count():
-            session.add(new_response)
-            session.commit()
+        check_data = Check(url=response.url, last_status=response.status_code,
+                           elapsed_time=response.elapsed.total_seconds(),
+                           content_type=response.headers["Content-type"],
+                           is_up=is_up, is_muted=is_muted)
+        if not self.active_url(response):
+            self.add_url(check_data)
+            print "Not found"
         else:
-            session.query(Check).filter_by(url=response.url).update
-            ({Check.last_status: response.status_code,
-            Check.last_request: datetime.datetime.now(),
-            Check.is_up: is_up, Check.is_muted: is_muted})
-            session.commit()
-
+            self.update_url(response)
         if response.status_code != 200:
             notify.slack_error(response)
             return
         else:
-            #print "Check ok"
             return
 
     def run_checks(self):
@@ -59,6 +51,33 @@ class CheckSites(object):
                hooks={'response' : self.process_response})
                for url in config.URLS)
         grequests.map(reqs, exception_handler=self.exception_handler)
+
+    def active_url(self, response, **kwargs):
+        session = self.Session()
+        result = session.query(Check).filter_by(url=response.url).count()
+        session.close()
+        return result
+
+    def add_url(self, check_data, **kwargs):
+        sys.stdout.write("Adding untracked URL %s" % url)
+        session = self.Session()
+        session.add(check_data)
+        session.commit()
+        session.close()
+
+    def update_url(self, response, **kwargs):
+        session = self.Session()
+        session.query(Check).filter_by(url=response.url).update(
+            {Check.last_status: response.status_code,
+            Check.elapsed_time: response.elapsed.total_seconds(),
+            Check.last_request: datetime.datetime.now()})
+        session.commit()
+        session.close()
+        sys.stdout.write("%s: Updated %s %s %s\n" %
+            (datetime.datetime.now(),
+            response.url,
+            response.status_code,
+            response.elapsed.total_seconds()))
 
 if __name__ == '__main__':
     job = CheckSites()
